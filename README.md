@@ -22,6 +22,8 @@ What does rx-api not do:
 
 ## Installation
 
+`$ yarn add rx-api`
+
 ### Basic setup
 
 1. Create an API epic

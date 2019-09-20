@@ -2,7 +2,7 @@ import { useSelector } from 'react-redux';
 
 import { defaultState } from './reducer';
 
-let stateKey = 'rxapi';
+let stateKey = 'rx-api';
 
 export const setStateKey = key => {
 	stateKey = key;

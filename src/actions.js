@@ -1,4 +1,4 @@
-export const actionPrefix = 'rxapi';
+export const actionPrefix = 'rx-api';
 
 export function createActionCreator(label) {
 	const type = `${actionPrefix}/${label}`;
