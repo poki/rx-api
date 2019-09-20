@@ -1,0 +1,9 @@
+{
+  "name": "rx-api",
+  "version": "1.0.0",
+  "description": "Reactive API system for redux-observable",
+  "main": "index.js",
+  "repository": "https://github.com/poki/rx-api",
+  "author": "Prokos <awsumthx@gmail.com>",
+  "license": "MIT"
+}
