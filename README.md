@@ -22,14 +22,14 @@ What does rx-api not do:
 
 ## Installation
 
-`$ yarn add rx-api`
+`$ yarn add @poki/rx-api`
 
 ### Basic setup
 
 1. Create an API epic
 
 ```js
-import { createApiEpic } from 'rx-api';
+import { createApiEpic } from '@poki/rx-api';
 
 export const getGames = createApiEpic(
 	'games/all', // identifier
@@ -40,7 +40,7 @@ export const getGames = createApiEpic(
 2. Register the epic with redux-observable and create the reducer
 
 ```js
-import { createApiReducer } from 'rx-api';
+import { createApiReducer } from '@poki/rx-api';
 import { createStore, combineReducers } from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
@@ -99,7 +99,7 @@ function gameReducer(state, action) {
 
 ```js
 import { useSelector, useDispatch } from 'redux';
-import { useSelectApiStatus } from 'rx-api'; // Or selectApiStatus if you use selectors
+import { useSelectApiStatus } from '@poki/rx-api'; // Or selectApiStatus if you use selectors
 
 import { getGames } from './epics';
 

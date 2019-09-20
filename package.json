@@ -1,5 +1,5 @@
 {
-	"name": "rx-api",
+	"name": "@poki/rx-api",
 	"version": "1.0.0",
 	"repository": "https://github.com/poki/rx-api",
 	"description": "Reactive API system for redux-observable",
