@@ -2,6 +2,7 @@ import { clearAllStatuses } from './actions';
 import reducer from './reducer';
 import { useSelectApiStatus, selectApiStatus, setStateKey } from './selectors';
 import createApiEpic from './createApiEpic';
+import combinedApiStatus from './combinedApiStatus';
 
 const createApiReducer = key => {
 	setStateKey(key);
@@ -9,6 +10,7 @@ const createApiReducer = key => {
 };
 
 export {
+	combinedApiStatus,
 	createApiReducer,
 	createApiEpic,
 
