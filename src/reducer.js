@@ -34,7 +34,7 @@ export default function apiReducer(state = {}, action) {
 			[id]: {
 				...state[id],
 				done: true,
-				error: action.payload.error,
+				error: action.payload.result,
 				pending: false,
 				progress: 1,
 			},
@@ -47,7 +47,7 @@ export default function apiReducer(state = {}, action) {
 			[id]: {
 				...state[id],
 				done: true,
-				error: action.payload.error,
+				error: null,
 				pending: false,
 				progress: 1,
 			},
