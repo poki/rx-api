@@ -28,6 +28,19 @@ export default function apiReducer(state = {}, action) {
 		};
 	}
 
+	if (type === `${actionPrefix}/cancel`) {
+		return {
+			...state,
+			[id]: {
+				...state[id],
+				done: false,
+				error: null,
+				pending: false,
+				progress: 1,
+			},
+		};
+	}
+
 	if (type === `${actionPrefix}/error`) {
 		return {
 			...state,
