@@ -1,5 +1,5 @@
 import { empty, of, merge, Subject } from 'rxjs';
-import { catchError, filter, map, switchMap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, takeUntil } from 'rxjs/operators';
 import { ajax } from 'rxjs/ajax';
 import xhr2 from 'xhr2';
 
@@ -48,6 +48,8 @@ export default function createApiEpic(id, handler, getCBStream) {
 						callApiCreator,
 						action.payload ? action.payload.options : {},
 						state$.value,
+					).pipe(
+						takeUntil(cancel$),
 					);
 				}),
 			),
@@ -79,6 +81,8 @@ export default function createApiEpic(id, handler, getCBStream) {
 							switchMap(result => of(success({ options: action.payload.options, result }))),
 							catchError(result => of(error({ options: action.payload.options, result }))),
 						),
+					).pipe(
+						takeUntil(cancel$),
 					);
 				}),
 			),
