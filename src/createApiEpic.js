@@ -78,8 +78,8 @@ export default function createApiEpic(id, handler, getCBStream) {
 							crossDomain: true,
 							progressSubscriber: progressSubscriber$,
 						}).pipe(
-							switchMap(result => of(success({ options: fetchAction.payload.options, result }))),
-							catchError(result => of(error({ options: fetchAction.payload.options, result }))),
+							switchMap(result => of(success({ result, options: fetchAction && fetchAction.payload ? fetchAction.payload.options : undefined }))),
+							catchError(result => of(error({ result, options: fetchAction && fetchAction.payload ? fetchAction.payload.options : undefined }))),
 						),
 					).pipe(
 						takeUntil(cancel$),
