@@ -7,6 +7,7 @@ export const defaultState = {
 	done: false,
 	error: null,
 	pending: false,
+	timesCompleted: 0,
 };
 
 export default function apiReducer(state = {}, action) {
@@ -18,6 +19,7 @@ export default function apiReducer(state = {}, action) {
 		return {
 			...state,
 			[id]: {
+				...defaultState,
 				...state[id],
 				done: false,
 				error: null,
@@ -50,6 +52,7 @@ export default function apiReducer(state = {}, action) {
 				error: action.payload.result,
 				pending: false,
 				progress: 1,
+				timesCompleted: state[id].timesCompleted++,
 			},
 		};
 	}
@@ -63,6 +66,7 @@ export default function apiReducer(state = {}, action) {
 				error: null,
 				pending: false,
 				progress: 1,
+				timesCompleted: state[id].timesCompleted++,
 			},
 		};
 	}
