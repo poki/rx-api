@@ -65,7 +65,7 @@ export default function apiReducer(state = {}, action) {
 				error: null,
 				pending: false,
 				progress: 1,
-				timesCompleted: state[id].timesCompleted++,
+				timesCompleted: (state[id].timesCompleted + 1),
 			},
 		};
 	}
