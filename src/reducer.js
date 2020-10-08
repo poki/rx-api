@@ -52,7 +52,6 @@ export default function apiReducer(state = {}, action) {
 				error: action.payload.result,
 				pending: false,
 				progress: 1,
-				timesCompleted: state[id].timesCompleted++,
 			},
 		};
 	}
