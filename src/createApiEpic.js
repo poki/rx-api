@@ -2,18 +2,26 @@ import { empty, of, merge, Subject } from 'rxjs';
 import { catchError, filter, map, switchMap, takeUntil } from 'rxjs/operators';
 import { ajax } from 'rxjs/ajax';
 import xhr2 from 'xhr2';
+import objectHash from 'object-hash';
 
 import {
 	createActionCreator,
 } from './actions';
 
-export default function createApiEpic(id, handler, getCBStream) {
+const cache = {};
+
+export default function createApiEpic(id, handler, getCBStream, options = {}) {
+	const { cacheSeconds = 0 } = options;
+
+	const doCache = cacheSeconds > 0;
+
 	const defaultState = {
 		session: {},
 	};
 
-	const fetch = (options, _getCBStream) => createActionCreator(`fetch/${id}`)({ options, getCBStream: _getCBStream });
+	const attemptFetch = (options, _getCBStream) => createActionCreator(`attemptFetch/${id}`)({ options, getCBStream: _getCBStream });
 
+	const fetch = createActionCreator(`fetch/${id}`);
 	const cancel = createActionCreator(`cancel/${id}`);
 	const error = createActionCreator(`error/${id}`);
 	const progress = createActionCreator(`progress/${id}`);
@@ -29,12 +37,26 @@ export default function createApiEpic(id, handler, getCBStream) {
 		const streams = { cancel$, success$, error$, progress$ };
 
 		const epicCbStream$ = getCBStream ? getCBStream(streams) : empty();
-		const fetchType = fetch().type;
 
 		return merge(
+			// attemptFetch actions
+			action$.pipe(
+				filter(action => action.type === attemptFetch().type),
+				switchMap(action => {
+					const cacheKey = objectHash({ type: action.type, options: action.payload.options });
+					const cacheInfo = cache[cacheKey];
+					if (doCache && cacheInfo && (Date.now() - cacheInfo.time) < (cacheSeconds * 1000)) {
+						// We're still within the cache period, immediately go to success
+						return of(success({ result: cacheInfo.result, options: action.payload.options, fromCache: true }));
+					}
+
+					// Otherwise just go and fetch!
+					return of(fetch({ ...action.payload, cacheKey }));
+				}),
+			),
 			// apiFetch actions
 			action$.pipe(
-				filter(action => action.type === fetchType),
+				filter(action => action.type === fetch.type),
 				switchMap(action => {
 					const callApiCreator = payload => of({
 						...callApi(payload),
@@ -59,7 +81,7 @@ export default function createApiEpic(id, handler, getCBStream) {
 				switchMap(action => {
 					const progressSubscriber$ = new Subject();
 					const fetchAction = action.__fetchAction;
-					const actionCbStream$ = fetchAction && fetchAction.payload && fetchAction.payload.getCBStream ? fetchAction.payload.getCBStream(streams) : empty();
+					const actionCbStream$ = fetchAction.payload.getCBStream ? fetchAction.payload.getCBStream(streams) : empty();
 
 					return merge(
 						// Action callback stream
@@ -78,8 +100,18 @@ export default function createApiEpic(id, handler, getCBStream) {
 							crossDomain: true,
 							progressSubscriber: progressSubscriber$,
 						}).pipe(
-							switchMap(result => of(success({ result, options: fetchAction && fetchAction.payload ? fetchAction.payload.options : undefined }))),
-							catchError(result => of(error({ result, options: fetchAction && fetchAction.payload ? fetchAction.payload.options : undefined }))),
+							switchMap(result => {
+								// Set cache
+								if (doCache) {
+									cache[fetchAction.payload.cacheKey] = {
+										time: Date.now(),
+										result,
+									};
+								}
+
+								return of(success({ result, options: fetchAction.payload.options, fromCache: false }));
+							}),
+							catchError(result => of(error({ result, options: fetchAction.payload.options }))),
 						),
 					).pipe(
 						takeUntil(cancel$),
@@ -93,7 +125,7 @@ export default function createApiEpic(id, handler, getCBStream) {
 	epic.progress = progress;
 	epic.cancel = cancel;
 	epic.error = error;
-	epic.fetch = fetch;
+	epic.fetch = attemptFetch;
 	epic.id = id;
 
 	return epic;
