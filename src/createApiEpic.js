@@ -11,7 +11,7 @@ import {
 const cache = {};
 
 export default function createApiEpic(id, handler, getCBStream, options = {}) {
-	const { cacheSeconds = 0 } = options;
+	const { cacheSeconds = 0, cacheKey: overrideCacheKey } = options;
 
 	const doCache = cacheSeconds > 0;
 
@@ -43,11 +43,14 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			action$.pipe(
 				filter(action => action.type === attemptFetch().type),
 				switchMap(action => {
-					const cacheKey = objectHash({ type: action.type, options: action.payload.options });
-					const cacheInfo = cache[cacheKey];
-					if (doCache && cacheInfo && (Date.now() - cacheInfo.time) < (cacheSeconds * 1000)) {
-						// We're still within the cache period, immediately go to success
-						return of(success({ result: cacheInfo.result, options: action.payload.options, fromCache: true }));
+					let cacheKey = id;
+					if (doCache) {
+						cacheKey = overrideCacheKey || objectHash({ type: action.type, options: action.payload.options });
+						const cacheInfo = cache[cacheKey];
+						if (cacheInfo && (Date.now() - cacheInfo.time) < (cacheSeconds * 1000)) {
+							// We're still within the cache period, immediately go to success
+							return of(success({ result: cacheInfo.result, options: action.payload.options, fromCache: true }));
+						}
 					}
 
 					// Otherwise just go and fetch!
