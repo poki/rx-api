@@ -1,5 +1,5 @@
 import { empty, of, merge, Subject } from 'rxjs';
-import { catchError, filter, map, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, takeUntil } from 'rxjs/operators';
 import { ajax } from 'rxjs/ajax';
 import xhr2 from 'xhr2';
 import objectHash from 'object-hash';
@@ -42,7 +42,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			// attemptFetch actions
 			action$.pipe(
 				filter(action => action.type === attemptFetch().type),
-				switchMap(action => {
+				mergeMap(action => {
 					let cacheKey = id;
 					if (doCache) {
 						cacheKey = overrideCacheKey || objectHash({ type: action.type, options: action.payload.options });
@@ -60,7 +60,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			// apiFetch actions
 			action$.pipe(
 				filter(action => action.type === fetch.type),
-				switchMap(action => {
+				mergeMap(action => {
 					const callApiCreator = payload => of({
 						...callApi(payload),
 						// Ensure when creating the callApi action that the original fetchAction is attached
@@ -81,7 +81,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			// callApi actions
 			action$.pipe(
 				filter(action => action.type === callApi.type),
-				switchMap(action => {
+				mergeMap(action => {
 					const progressSubscriber$ = new Subject();
 					const fetchAction = action.__fetchAction;
 					const actionCbStream$ = fetchAction.payload.getCBStream ? fetchAction.payload.getCBStream(streams) : empty();
@@ -103,7 +103,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 							crossDomain: true,
 							progressSubscriber: progressSubscriber$,
 						}).pipe(
-							switchMap(result => {
+							mergeMap(result => {
 								// Set cache
 								if (doCache) {
 									cache[fetchAction.payload.cacheKey] = {
