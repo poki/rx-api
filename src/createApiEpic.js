@@ -1,5 +1,5 @@
 import { empty, of, merge, Subject } from 'rxjs';
-import { catchError, filter, map, mergeMap, takeUntil } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, switchMap, takeUntil } from 'rxjs/operators';
 import { ajax } from 'rxjs/ajax';
 import xhr2 from 'xhr2';
 import objectHash from 'object-hash';
@@ -11,7 +11,7 @@ import {
 const cache = {};
 
 export default function createApiEpic(id, handler, getCBStream, options = {}) {
-	const { cacheSeconds = 0, cacheKey: overrideCacheKey } = options;
+	const { cacheSeconds = 0, cacheKey: overrideCacheKey, allowParallel = false } = options;
 
 	const doCache = cacheSeconds > 0;
 
@@ -28,6 +28,8 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 	const success = createActionCreator(`success/${id}`);
 	const callApi = createActionCreator(`call/${id}`);
 
+	const mapOperator = allowParallel ? mergeMap : switchMap;
+
 	const epic = (action$, state$ = { value: defaultState }) => {
 		const cancel$ = action$.pipe(filter(action => action.type === cancel.type));
 		const success$ = action$.pipe(filter(action => action.type === success.type));
@@ -42,7 +44,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			// attemptFetch actions
 			action$.pipe(
 				filter(action => action.type === attemptFetch().type),
-				mergeMap(action => {
+				mapOperator(action => {
 					let cacheKey = id;
 					if (doCache) {
 						cacheKey = overrideCacheKey || objectHash({ type: action.type, options: action.payload.options });
@@ -60,7 +62,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			// apiFetch actions
 			action$.pipe(
 				filter(action => action.type === fetch.type),
-				mergeMap(action => {
+				mapOperator(action => {
 					const callApiCreator = payload => of({
 						...callApi(payload),
 						// Ensure when creating the callApi action that the original fetchAction is attached
@@ -81,7 +83,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			// callApi actions
 			action$.pipe(
 				filter(action => action.type === callApi.type),
-				mergeMap(action => {
+				mapOperator(action => {
 					const progressSubscriber$ = new Subject();
 					const fetchAction = action.__fetchAction;
 					const actionCbStream$ = fetchAction.payload.getCBStream ? fetchAction.payload.getCBStream(streams) : empty();
@@ -103,7 +105,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 							crossDomain: true,
 							progressSubscriber: progressSubscriber$,
 						}).pipe(
-							mergeMap(result => {
+							mapOperator(result => {
 								// Set cache
 								if (doCache) {
 									cache[fetchAction.payload.cacheKey] = {
