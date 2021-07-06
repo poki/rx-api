@@ -1,7 +1,6 @@
 import { empty, of, merge, Subject } from 'rxjs';
 import { catchError, filter, map, mergeMap, switchMap, takeUntil, take } from 'rxjs/operators';
 import { ajax } from 'rxjs/ajax';
-import xhr2 from 'xhr2';
 import objectHash from 'object-hash';
 
 import {
@@ -103,7 +102,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 						// Handle request
 						ajax({
 							...action.payload,
-							createXHR: () => new (typeof XMLHttpRequest !== 'undefined' ? XMLHttpRequest : xhr2)(),
+							createXHR: () => new XMLHttpRequest(),
 							crossDomain: true,
 							progressSubscriber: progressSubscriber$,
 						}).pipe(

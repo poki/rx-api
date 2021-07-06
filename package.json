@@ -16,8 +16,7 @@
 	},
 	"author": "Prokos <awsumthx@gmail.com>",
 	"dependencies": {
-		"object-hash": "^2.1.1",
-		"xhr2": "^0.2.0"
+		"object-hash": "^2.1.1"
 	},
 	"peerDependencies": {
 		"react-redux": "^7.1.1",
