@@ -1,5 +1,5 @@
 import { empty, of, merge, Subject } from 'rxjs';
-import { catchError, filter, map, mergeMap, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, switchMap, takeUntil, take } from 'rxjs/operators';
 import { ajax } from 'rxjs/ajax';
 import xhr2 from 'xhr2';
 import objectHash from 'object-hash';
@@ -90,7 +90,9 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 
 					return merge(
 						// Action callback stream
-						actionCbStream$,
+						actionCbStream$.pipe(
+							take(1), // Action streams should only be listen once, as they are re-created on every call
+						),
 						// Epic callback stream
 						epicCbStream$,
 						// Handle progress
