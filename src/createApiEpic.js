@@ -44,18 +44,31 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 			action$.pipe(
 				filter(action => action.type === attemptFetch().type),
 				mapOperator(action => {
+					const actionCbStream$ = action.payload.getCBStream ? action.payload.getCBStream(streams) : empty();
+
 					let cacheKey = id;
+					let nextAction;
+
 					if (doCache) {
 						cacheKey = overrideCacheKey || objectHash({ type: action.type, options: action.payload.options });
 						const cacheInfo = cache[cacheKey];
 						if (cacheInfo && (Date.now() - cacheInfo.time) < (cacheSeconds * 1000)) {
 							// We're still within the cache period, immediately go to success
-							return of(success({ result: cacheInfo.result, options: action.payload.options, fromCache: true }));
+							nextAction = of(success({ result: cacheInfo.result, options: action.payload.options, fromCache: true }));
 						}
 					}
 
 					// Otherwise just go and fetch!
-					return of(fetch({ ...action.payload, cacheKey }));
+					nextAction = of(fetch({ ...action.payload, cacheKey }));
+
+					return merge(
+						// Listen to the action callback stream
+						actionCbStream$.pipe(
+							take(1), // Action streams should only be listened to once, as they are re-created on every call
+						),
+						// And emit the next action
+						nextAction,
+					);
 				}),
 			),
 			// apiFetch actions
@@ -85,13 +98,8 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 				mapOperator(action => {
 					const progressSubscriber$ = new Subject();
 					const fetchAction = action.__fetchAction;
-					const actionCbStream$ = fetchAction.payload.getCBStream ? fetchAction.payload.getCBStream(streams) : empty();
 
 					return merge(
-						// Action callback stream
-						actionCbStream$.pipe(
-							take(1), // Action streams should only be listen once, as they are re-created on every call
-						),
 						// Epic callback stream
 						epicCbStream$,
 						// Handle progress
