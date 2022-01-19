@@ -58,8 +58,10 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 						}
 					}
 
-					// Otherwise just go and fetch!
-					nextAction = of(fetch({ ...action.payload, cacheKey }));
+					if (!nextAction) {
+						// Otherwise just go and fetch!
+						nextAction = of(fetch({ ...action.payload, cacheKey }));
+					}
 
 					return merge(
 						// Listen to the action callback stream
