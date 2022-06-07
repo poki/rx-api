@@ -54,7 +54,7 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 						const cacheInfo = cache[cacheKey];
 						if (cacheInfo && (Date.now() - cacheInfo.time) < (cacheSeconds * 1000)) {
 							// We're still within the cache period, immediately go to success
-							nextAction = of(success({ result: cacheInfo.result, options: action.payload.options, fromCache: true }));
+							nextAction = of(success({ result: cacheInfo.result, options: action.payload.options, fromCache: true, state$ }));
 						}
 					}
 
@@ -125,9 +125,9 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 									};
 								}
 
-								return of(success({ result, options: fetchAction.payload.options, fromCache: false }));
+								return of(success({ result, options: fetchAction.payload.options, fromCache: false, state$ }));
 							}),
-							catchError(result => of(error({ result, options: fetchAction.payload.options }))),
+							catchError(result => of(error({ result, options: fetchAction.payload.options, state$ }))),
 						),
 					).pipe(
 						takeUntil(cancel$),
