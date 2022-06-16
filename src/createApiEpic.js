@@ -1,5 +1,5 @@
 import { empty, of, merge, Subject } from 'rxjs';
-import { catchError, filter, map, mergeMap, switchMap, takeUntil, take } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, switchMap, takeUntil } from 'rxjs/operators';
 import { ajax } from 'rxjs/ajax';
 import objectHash from 'object-hash';
 
@@ -38,11 +38,12 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 		const streams = { cancel$, success$, error$, progress$ };
 
 		const epicCbStream$ = getCBStream ? getCBStream(streams) : empty();
+		const attemptFetchType = attemptFetch().type;
 
 		return merge(
 			// attemptFetch actions
 			action$.pipe(
-				filter(action => action.type === attemptFetch().type),
+				filter(action => action.type === attemptFetchType),
 				mapOperator(action => {
 					const actionCbStream$ = action.payload.getCBStream ? action.payload.getCBStream(streams) : empty();
 
@@ -66,7 +67,11 @@ export default function createApiEpic(id, handler, getCBStream, options = {}) {
 					return merge(
 						// Listen to the action callback stream
 						actionCbStream$.pipe(
-							take(1), // Action streams should only be listened to once, as they are re-created on every call
+							// As soon as a new attemptFetch is done, unsubscribe to any still subscribed action cb streams
+							// to avoid duplicate handling
+							takeUntil(action$.pipe(
+								filter(action => action.type === attemptFetchType),
+							)),
 						),
 						// And emit the next action
 						nextAction,
